@@ -1,65 +1,108 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import PageContainer from "@/components/PageContainer";
+import EventCard from "@/components/EventCard";
+import { API_URL } from "@/lib/api";
+
+type User = { _id: string; username: string; role: string; location?: string };
+type BackendEvent = {
+  _id: string;
+  title: string;
+  description: string;
+  location: string;
+  date: string;
+  organizerId: { _id: string; username: string } | null;
+};
+
+export default function HomePage() {
+  const [user, setUser] = useState<User | null>(null);
+  const [events, setEvents] = useState<BackendEvent[]>([]);
+
+  useEffect(() => {
+    fetch(`${API_URL}/api/users/profile`, { credentials: "include" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then(setUser)
+      .catch(() => null);
+
+    fetch(`${API_URL}/api/events`, { cache: "no-store" } as RequestInit)
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data) => setEvents(data.slice(0, 4)))
+      .catch(() => []);
+  }, []);
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <PageContainer>
+      <div className="mb-4">
+        <h1 className="h2 mb-1">Artist Nearby</h1>
+        <p className="text-muted mb-0">Discover and connect with artists in your area.</p>
+      </div>
+
+      <div className="card mb-5">
+        <div className="card-header">
+          {user ? `Welcome back, ${user.username}` : "Welcome to Artist Nearby"}
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+        <div className="card-body">
+          {user ? (
+            <>
+              <p className="small text-muted mb-3 text-capitalize">
+                Signed in as {user.role}
+                {user.location ? ` · ${user.location}` : ""}
+              </p>
+              <div className="d-flex gap-2">
+                <Link href="/profile" className="btn btn-outline-dark btn-sm">
+                  View My Profile
+                </Link>
+                {user.role === "organizer" && (
+                  <Link href="/events/create" className="btn btn-dark btn-sm">
+                    + Create Event
+                  </Link>
+                )}
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="small text-muted mb-3">
+                Find coffee shops, meetups, and artists near you.
+              </p>
+              <div className="d-flex gap-2">
+                <Link href="/login" className="btn btn-dark btn-sm">
+                  Log In
+                </Link>
+                <Link href="/register" className="btn btn-outline-dark btn-sm">
+                  Register
+                </Link>
+              </div>
+            </>
+          )}
         </div>
-      </main>
-    </div>
+      </div>
+
+      <h2 className="h5 mb-3">Upcoming Events</h2>
+      {events.length === 0 ? (
+        <p className="text-muted small mb-5">No events yet.</p>
+      ) : (
+        <div className="row row-cols-1 row-cols-md-2 g-3 mb-5">
+          {events.map((event) => (
+            <div key={event._id} className="col">
+              <EventCard event={event} />
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="d-flex gap-3 align-items-center">
+        <Link href="/search" className="btn btn-dark">
+          Find a Spot
+        </Link>
+        <Link href="/events" className="btn btn-outline-dark">
+          All Events
+        </Link>
+        <Link href="/project" className="text-muted small text-decoration-none">
+          About this project
+        </Link>
+      </div>
+    </PageContainer>
   );
 }
