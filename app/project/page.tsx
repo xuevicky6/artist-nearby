@@ -40,7 +40,7 @@ export default function ProjectPage() {
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                    [PUT SERVER GITHUB LINK HERE]
+                    https://github.com/xuevicky6/artist-nearby-server.git
                   </a>
                 </td>
               </tr>
